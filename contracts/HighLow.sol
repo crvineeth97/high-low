@@ -6,17 +6,28 @@ contract HighLow
     // Represent each card as a struct
     struct Card
     {
-        uint id;
-        uint number;
+        uint id; // Used to reference on mapping
+        uint number;// These three params are standard card features
         string colour;
         string cardType;
     }
 
+    // A bet comprises the hashed prediction, and the amount
+    // put forward in the bet.
     struct Bet
     {
         bytes32 blindedPredict;
         uint amount;
     }
+
+    // The deck/burn is defined as true/false on indices of deck.
+    mapping(uint => Card) public deck;
+    mapping(uint => bool) private burn;
+
+    // To map the bid made to the address that made it
+    mapping(address => Bet) public bets;
+
+    Card public placedCard;
 
     uint public maxNoOfCards = 52;
     uint private noOfUnopenedCards = 52;
@@ -29,19 +40,12 @@ contract HighLow
     uint public revealEnd;
     bool public ended;
 
-    // The deck/burn is defined as true/false on indices of deck.
-    mapping(uint => Card) public deck;
-    mapping(uint => bool) private burn;
 
-    // To map the bid made to the address that made it
-    mapping(address => Bet) public bets;
 
-    /// Modifiers are a convenient way to validate inputs to
-    /// functions. `onlyBefore` is applied to `bid` below:
-    /// The new function body is the modifier's body where
-    /// `_` is replaced by the old function body.
     modifier onlyBefore(uint _time) { require(now < _time); _; }
     modifier onlyAfter(uint _time) { require(now > _time); _; }
+
+
 
     constructor(
         uint _biddingTime,
@@ -49,11 +53,16 @@ contract HighLow
         address payable _beneficiary
     ) public 
     {
-        uint[] memory unopenedCards = new uint[](maxNoOfCards);
-        bool[] memory burnDeck = new bool[](maxNoOfCards)
+
         beneficiary = _beneficiary;
         biddingEnd = now + _biddingTime;
         revealEnd = biddingEnd + _revealTime;
+
+        for (uint i = 0; i < maxNoOfCards; i++) 
+        {
+            deck[i] = Card(i, (i+1)%13, (i*2)/maxNoOfCards, (i*4)/maxNoOfCards)           // TODO DEFINE col, typ 
+            burn[i] = false;
+        }
     }
 
     /// Place a blinded bet with `_blindedPredict` =
@@ -96,12 +105,32 @@ contract HighLow
     function correctPrediction(uint prediction) internal 
             returns (bool success) 
     {
+        // low is 0, high is 1
+        Card memory newpick = pickCard();
+        uint realval = -1;
+        if (newpick.number < placedCard.number) 
+        {
+            realval = 0;
+        }
+        else if (newpick.number > placedCard.number) {
+            realval = 1;
+        }
+        else {
         
+        }
+
+        return  prediction == realval;
+
     }
 
     function pickCard() 
     {
-        
+        uint8 val = random();
+        while(burn[val]) 
+        {
+            val++;
+        }
+        placedCard = deck[val]; 
     }
 
     function random() private view returns (uint8) 
