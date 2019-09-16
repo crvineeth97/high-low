@@ -3,54 +3,38 @@ pragma solidity ^0.5.0;
 contract HighLow
 {
 
-    uint public maxNoOfCards = 52;
-    uint private noOfUnopenedCards = 52;
-
     // Represent each card as a struct
     struct Card
     {
+        uint id;
         uint number;
         string colour;
         string cardType;
     }
 
-    // Essentially an array of all cards, need to initialise it
-    mapping(uint => Card) public deck;
-
-    // The burn deck
-    mapping(uint => Card) public burn;
-
-    function createCard(uint  _number, string memory _colour, string memory _ctype) private
+    struct Bet
     {
-        decksize++;
-        deck[decksize] = Card(decksize, _number, _colour, _ctype);
+        bytes32 blindedPredict;
+        uint amount;
     }
 
-    function pickCard() public
-    {
+    uint public maxNoOfCards = 52;
+    uint private noOfUnopenedCards = 52;
 
-    }
-
-    struct Bid
-    {
-        bytes32 blindedBid;
-        uint deposit;
-    }
-
+    // Address of the game host. Money goes to them if draw
     address payable public beneficiary;
+
+    // Time tracking
     uint public biddingEnd;
     uint public revealEnd;
     bool public ended;
 
-    mapping(address => Bid[]) public bids;
+    // The deck/burn is defined as true/false on indices of deck.
+    mapping(uint => Card) public deck;
+    mapping(uint => bool) private burn;
 
-    address public highestBidder;
-    uint public highestBid;
-
-    // Allowed withdrawals of previous bids
-    mapping(address => uint) pendingReturns;
-
-    event AuctionEnded(address winner, uint highestBid);
+    // To map the bid made to the address that made it
+    mapping(address => Bet) public bets;
 
     /// Modifiers are a convenient way to validate inputs to
     /// functions. `onlyBefore` is applied to `bid` below:
@@ -63,7 +47,8 @@ contract HighLow
         uint _biddingTime,
         uint _revealTime,
         address payable _beneficiary
-    ) public {
+    ) public 
+    {
         uint[] memory unopenedCards = new uint[](maxNoOfCards);
         bool[] memory burnDeck = new bool[](maxNoOfCards)
         beneficiary = _beneficiary;
@@ -71,62 +56,57 @@ contract HighLow
         revealEnd = biddingEnd + _revealTime;
     }
 
-    /// Place a blinded bid with `_blindedBid` =
+    /// Place a blinded bet with `_blindedPredict` =
     /// keccak256(abi.encodePacked(value, fake, secret)).
-    /// The sent ether is only refunded if the bid is correctly
-    /// revealed in the revealing phase. The bid is valid if the
-    /// ether sent together with the bid is at least "value" and
-    /// "fake" is not true. Setting "fake" to true and sending
-    /// not the exact amount are ways to hide the real bid but
-    /// still make the required deposit. The same address can
-    /// place multiple bids.
-    function bid(bytes32 _blindedBid)
+    function bet(bytes32 _blindedPredict)
         public
         payable
         onlyBefore(biddingEnd)
     {
-        bids[msg.sender].push(Bid({
-            blindedBid: _blindedBid,
-            deposit: msg.value
+        bets[msg.sender] = Bet({
+            blindedPredict: _blindedPredict,
+            amount: msg.value
         }));
     }
 
-    /// Reveal your blinded bids. You will get a refund for all
-    /// correctly blinded invalid bids and for all bids except for
-    /// the totally highest.
+    /// Reveal your blinded bets.
     function reveal(
-        uint[] memory _values,
-        bool[] memory _fake,
-        bytes32[] memory _secret
+        uint memory _amount,
+        uint memory _prediction,
+        bytes32 memory _secret
     )
         public
         onlyAfter(biddingEnd)
         onlyBefore(revealEnd)
     {
-        uint length = bids[msg.sender].length;
-        require(_values.length == length);
-        require(_fake.length == length);
-        require(_secret.length == length);
-
         uint refund;
-        for (uint i = 0; i < length; i++) {
-            Bid storage bidToCheck = bids[msg.sender][i];
-            (uint value, bool fake, bytes32 secret) = (_values[i], _fake[i], _secret[i]);
-            if (bidToCheck.blindedBid != keccak256(abi.encodePacked(value, fake, secret))) {
-                // Bid was not actually revealed.
-                // Do not refund deposit.
-                continue;
+        Bet storage betToCheck = bets[msg.sender];
+        (uint amount, uint prediction, bytes32 secret) = (_amount, _prediction, _secret);
+        if (betToCheck.blindedPredict == keccak256(prediction, secret)) // Need to check this works
+        {
+            if (correctPrediction(prediction)) 
+            {
+                refund = 2*betToCheck.amount;
             }
-            refund += bidToCheck.deposit;
-            if (!fake && bidToCheck.deposit >= value) {
-                if (placeBid(msg.sender, value))
-                    refund -= value;
-            }
-            // Make it impossible for the sender to re-claim
-            // the same deposit.
-            bidToCheck.blindedBid = bytes32(0);
         }
+        betToCheck.blindedPredict = bytes32(0);
         msg.sender.transfer(refund);
+    }
+
+    function correctPrediction(uint prediction) internal 
+            returns (bool success) 
+    {
+        
+    }
+
+    function pickCard() 
+    {
+        
+    }
+
+    function random() private view returns (uint8) 
+    {
+        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%52);
     }
 
     // This is an "internal" function which means that it
