@@ -2,6 +2,35 @@ pragma solidity ^0.5.0;
 
 contract HighLow
 {
+
+    uint public maxNoOfCards = 52;
+    uint private noOfUnopenedCards = 52;
+
+    // Represent each card as a struct
+    struct Card
+    {
+        uint number;
+        string colour;
+        string cardType;
+    }
+
+    // Essentially an array of all cards, need to initialise it
+    mapping(uint => Card) public deck;
+
+    // The burn deck
+    mapping(uint => Card) public burn;
+
+    function createCard(uint  _number, string memory _colour, string memory _ctype) private
+    {
+        decksize++;
+        deck[decksize] = Card(decksize, _number, _colour, _ctype);
+    }
+
+    function pickCard() public
+    {
+
+    }
+
     struct Bid
     {
         bytes32 blindedBid;
@@ -35,6 +64,8 @@ contract HighLow
         uint _revealTime,
         address payable _beneficiary
     ) public {
+        uint[] memory unopenedCards = new uint[](maxNoOfCards);
+        bool[] memory burnDeck = new bool[](maxNoOfCards)
         beneficiary = _beneficiary;
         biddingEnd = now + _biddingTime;
         revealEnd = biddingEnd + _revealTime;
