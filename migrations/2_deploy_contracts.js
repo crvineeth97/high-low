@@ -9,6 +9,6 @@ var revealTime = 10
 // Last account in our local Ganache
 var houseAddress = "0x5b327Fd9d785a7fF939f35430Db0fcEDd1a350b6"
 
-module.exports = function(deployer) {
-  deployer.deploy(HighLow, biddingTime, revealTime, houseAddress, {from: houseAddress});
+module.exports = function(deployer, network, address) {
+  deployer.deploy(HighLow, biddingTime, revealTime, address[0]);
 };
