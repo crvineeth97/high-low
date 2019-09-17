@@ -2,6 +2,13 @@ pragma solidity ^0.5.0;
 
 contract HighLow
 {
+    
+    // =========== Initialising variables ===========
+    // In this part, we focus on initialising variables/structs that 
+    // will be of use later. So, we init Card and Bet structs,
+    // mappings for deck and burn, something for the "placed card",
+    // Number of cards, times, etc.
+
 
     // Represent each card as a struct
     struct Card
@@ -28,6 +35,7 @@ contract HighLow
     mapping(address => Bet) public bets;
 
     Card public placedCard;
+    Card private hiddenCard;
 
     uint public maxNoOfCards = 52;
     uint private noOfUnopenedCards = 52;
@@ -38,7 +46,9 @@ contract HighLow
     // Time tracking
     uint public biddingEnd;
     uint public revealEnd;
-    bool public ended;
+    uint public biddingTime;
+    uint public revealTime;
+    
 
 
 
@@ -47,6 +57,25 @@ contract HighLow
 
 
 
+    // =========== Functional ===========
+    // This is where the logic of the program goes. As a brief sanity check/
+    // solution overview, this is what happens in the program:
+    // - constructor: inits times, beneficiaries
+    // - We make available a function for picking a random card. This card is
+    //  stored in placedCard
+    // - users can use function "bet" to place their bets. They give a bet amount,
+    //  and a hash of secretkey + prediction. They are allowed one bet.
+    // - After time expires, the bets are verified: each user verify()s with their
+    //  OG prediction, amount bet, and secretkey. function checks if their prediction
+    // was correct or not, and announces a reward accordingly. (0 for losing, 2x 
+    // for winning)
+    // - With this a new card has been generated. Next round is started by 
+    //  reinitialising the times
+    
+    // constructor initialising
+    // - times
+    // - all cards in deck
+    // - initial newcard
     constructor(
         uint _biddingTime,
         uint _revealTime,
@@ -58,6 +87,9 @@ contract HighLow
         biddingEnd = now + _biddingTime;
         revealEnd = biddingEnd + _revealTime;
 
+        biddingTime = _biddingTime;
+        revealTime = _revealTime;
+
         for (uint i = 0; i < maxNoOfCards; i++) 
         {
             uint t1 = i/26;
@@ -66,10 +98,12 @@ contract HighLow
             deck[i] = Card(i, (i+1)%13, t1, t2);
             burn[i] = false;
         }
+        
+        pickCard(true);
     }
 
     /// Place a blinded bet with `_blindedPredict` =
-    /// keccak256(abi.encodePacked(value, fake, secret)).
+    /// keccak256(abi.encodePacked(prediction, secret)).
     function bet(bytes32 _blindedPredict)
         public
         payable
@@ -83,7 +117,6 @@ contract HighLow
 
     /// Reveal your blinded bets.
     function reveal(
-        uint _amount,
         uint _prediction,
         bytes32 _secret
     )
@@ -93,10 +126,10 @@ contract HighLow
     {
         uint refund;
         Bet storage betToCheck = bets[msg.sender];
-        (uint amount, uint prediction, bytes32 secret) = (_amount, _prediction, _secret);
+        (uint prediction, bytes32 secret) = (_prediction, _secret);
         if (betToCheck.blindedPredict == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
         {
-            if (correctPrediction(prediction)) 
+            if (correctPrediction(prediction, betToCheck.amount)) 
             {
                 refund = 2*betToCheck.amount;
             }
@@ -105,41 +138,65 @@ contract HighLow
         msg.sender.transfer(refund);
     }
 
-    function correctPrediction(uint prediction) internal 
-            returns (bool success) 
+    // returns true if the prediction is true, false otherwise. In case of draw,
+    // gives money to beneficiary
+    function correctPrediction(uint prediction, uint amt) 
+        internal 
+        onlyAfter(biddingEnd)
+        onlyBefore(revealEnd)
+        returns (bool success)
     {
         // low is 0, high is 1
-        Card memory oldpick = placedCard;
-        pickCard();
         uint realval = 2;
-        if (placedCard.number < oldpick.number) 
+        if (hiddenCard.number < placedCard.number) 
         {
             realval = 0;
         }
-        else if (placedCard.number > oldpick.number) {
+        else if (hiddenCard.number > placedCard.number) {
             realval = 1;
         }
         else {
-        
+            beneficiary.transfer(amt);
         }
 
         return  prediction == realval;
-
     }
 
-    function pickCard() private
+    // Takes a new card out. If first, puts it in placedCard directly.
+    function pickCard(bool first)
+        public
     {
-        uint8 val = random();
+        uint val = random();
         while(burn[val]) 
         {
             val++;
+        } 
+        burn[val] = true;
+        if (first) 
+        {
+            placedCard = deck[val];
         }
-        placedCard = deck[val]; 
+        else 
+        {
+            hiddenCard = deck[val];
+        }
+        noOfUnopenedCards--;
     }
 
-    function random() private view returns (uint8) 
+    function random() private view returns (uint) 
     {
-        return uint8(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%52);
+        return uint(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%52);
+    }
+    
+    function reset()
+        public
+        onlyAfter(revealEnd)
+    {
+        placedCard = hiddenCard;
+        pickCard(false);
+        biddingEnd = now + biddingTime;
+        revealEnd = biddingEnd + revealTime;
+
     }
 
     // This is an "internal" function which means that it
@@ -152,7 +209,7 @@ contract HighLow
     //         return false;
     //     }
     //     if (highestBidder != address(0)) {
-    //         // Refund the previously highest bidder.
+    //         // Refund the previously highest bidder .
     //         pendingReturns[highestBidder] += highestBid;
     //     }
     //     highestBid = value;
