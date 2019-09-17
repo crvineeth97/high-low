@@ -37,8 +37,8 @@ contract HighLow
     Card public placedCard;
     Card private hiddenCard;
 
-    uint public maxNoOfCards = 52;
-    uint private noOfUnopenedCards = 52;
+    uint public maxNoOfCards;
+    uint private noOfUnopenedCards;
 
     // Address of the game host. Money goes to them if draw
     address payable public beneficiary;
@@ -82,6 +82,9 @@ contract HighLow
         address payable _beneficiary
     ) public 
     {
+        maxNoOfCards = 52;
+        noOfUnopenedCards = 52;
+
 
         beneficiary = _beneficiary;
         biddingEnd = now + _biddingTime;
