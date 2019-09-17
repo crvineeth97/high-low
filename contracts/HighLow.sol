@@ -8,8 +8,8 @@ contract HighLow
     {
         uint id; // Used to reference on mapping
         uint number;// These three params are standard card features
-        string colour;
-        string cardType;
+        uint colour;
+        uint cardType;
     }
 
     // A bet comprises the hashed prediction, and the amount
@@ -60,7 +60,10 @@ contract HighLow
 
         for (uint i = 0; i < maxNoOfCards; i++) 
         {
-            deck[i] = Card(i, (i+1)%13, (i*2)/maxNoOfCards, (i*4)/maxNoOfCards)           // TODO DEFINE col, typ 
+            uint t1 = i/26;
+            uint t2 = i/13;
+            
+            deck[i] = Card(i, (i+1)%13, t1, t2);
             burn[i] = false;
         }
     }
@@ -75,14 +78,14 @@ contract HighLow
         bets[msg.sender] = Bet({
             blindedPredict: _blindedPredict,
             amount: msg.value
-        }));
+        });
     }
 
     /// Reveal your blinded bets.
     function reveal(
-        uint memory _amount,
-        uint memory _prediction,
-        bytes32 memory _secret
+        uint _amount,
+        uint _prediction,
+        bytes32 _secret
     )
         public
         onlyAfter(biddingEnd)
@@ -91,7 +94,7 @@ contract HighLow
         uint refund;
         Bet storage betToCheck = bets[msg.sender];
         (uint amount, uint prediction, bytes32 secret) = (_amount, _prediction, _secret);
-        if (betToCheck.blindedPredict == keccak256(prediction, secret)) // Need to check this works
+        if (betToCheck.blindedPredict == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
         {
             if (correctPrediction(prediction)) 
             {
@@ -106,13 +109,14 @@ contract HighLow
             returns (bool success) 
     {
         // low is 0, high is 1
-        Card memory newpick = pickCard();
-        uint realval = -1;
-        if (newpick.number < placedCard.number) 
+        Card memory oldpick = placedCard;
+        pickCard();
+        uint realval = 2;
+        if (placedCard.number < oldpick.number) 
         {
             realval = 0;
         }
-        else if (newpick.number > placedCard.number) {
+        else if (placedCard.number > oldpick.number) {
             realval = 1;
         }
         else {
@@ -123,7 +127,7 @@ contract HighLow
 
     }
 
-    function pickCard() 
+    function pickCard() private
     {
         uint8 val = random();
         while(burn[val]) 
@@ -141,44 +145,33 @@ contract HighLow
     // This is an "internal" function which means that it
     // can only be called from the contract itself (or from
     // derived contracts).
-    function placeBid(address bidder, uint value) internal
-            returns (bool success)
-    {
-        if (value <= highestBid) {
-            return false;
-        }
-        if (highestBidder != address(0)) {
-            // Refund the previously highest bidder.
-            pendingReturns[highestBidder] += highestBid;
-        }
-        highestBid = value;
-        highestBidder = bidder;
-        return true;
-    }
+    // function placeBid(address bidder, uint value) internal
+    //         returns (bool success)
+    // {
+    //     if (value <= highestBid) {
+    //         return false;
+    //     }
+    //     if (highestBidder != address(0)) {
+    //         // Refund the previously highest bidder.
+    //         pendingReturns[highestBidder] += highestBid;
+    //     }
+    //     highestBid = value;
+    //     highestBidder = bidder;
+    //     return true;
+    // }
 
-    /// Withdraw a bid that was overbid.
-    function withdraw() public {
-        uint amount = pendingReturns[msg.sender];
-        if (amount > 0) {
-            // It is important to set this to zero because the recipient
-            // can call this function again as part of the receiving call
-            // before `transfer` returns (see the remark above about
-            // conditions -> effects -> interaction).
-            pendingReturns[msg.sender] = 0;
-
-            msg.sender.transfer(amount);
-        }
-    }
+// }
 
     /// End the auction and send the highest bid
     /// to the beneficiary.
-    function auctionEnd()
-        public
-        onlyAfter(revealEnd)
-    {
-        require(!ended);
-        emit AuctionEnded(highestBidder, highestBid);
-        ended = true;
-        beneficiary.transfer(highestBid);
-    }
+    // function auctionEnd()
+    //     public
+    //     onlyAfter(revealEnd)
+    // {
+    //     require(!ended);
+    //     emit AuctionEnded(highestBidder, highestBid);
+    //     ended = true;
+    //     beneficiary.transfer(highestBid);
+    // }
 }
+
