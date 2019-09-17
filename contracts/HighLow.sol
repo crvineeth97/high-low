@@ -55,8 +55,8 @@ contract HighLow
     uint32 public biddingTime;
     uint32 public revealTime;
 
-    modifier onlyBefore(uint _time) {require(now < _time); _;}
-    modifier onlyAfter(uint _time) {require(now > _time); _;}
+    modifier onlyBefore(uint _time) {require(now < _time, "Before Time error"); _;}
+    modifier onlyAfter(uint _time) {require(now > _time, "After time error"); _;}
 
 
     // =========== Functional ===========
