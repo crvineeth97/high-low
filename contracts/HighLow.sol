@@ -2,34 +2,40 @@ pragma solidity ^0.5.0;
 
 contract HighLow
 {
-    
     // =========== Initialising variables ===========
-    // In this part, we focus on initialising variables/structs that 
+    // In this part, we focus on initialising variables/structs that
     // will be of use later. So, we init Card and Bet structs,
     // mappings for deck and burn, something for the "placed card",
     // Number of cards, times, etc.
 
-
     // Represent each card as a struct
     struct Card
     {
-        uint id; // Used to reference on mapping
-        uint number;// These three params are standard card features
-        uint colour;
-        uint cardType;
+        uint8 id; // Used to reference on mapping
+        // number is the number on the card. It ranges from 1 - 13
+        // 1 = Ace, 2 - 10 = the 2 - 10 cards
+        // 11, 12, 13 = the Joker, Queen and King
+        uint8 number;
+        // colour is either a 0 or 1
+        // Let us say that 0 = Red and 1 = Black
+        bool colour;
+        // cardType ranges from 0 - 3
+        // Let us say that 0 = Diamonds, 1 = Hearts if colour is 0
+        // 0 = Clubs and 1 = Spades if colour is 1
+        bool cardType;
     }
 
     // A bet comprises the hashed prediction, and the amount
     // put forward in the bet.
     struct Bet
     {
-        bytes32 blindedPredict;
+        bytes32 blindedPrediction;
         uint amount;
     }
 
-    // The deck/burn is defined as true/false on indices of deck.
-    mapping(uint => Card) public deck;
-    mapping(uint => bool) private burn;
+    // The burn is defined as true/false on indices of deck.
+    mapping(uint8 => Card) public deck;
+    mapping(uint8 => bool) private burn;
 
     // To map the bid made to the address that made it
     mapping(address => Bet) public bets;
@@ -37,8 +43,8 @@ contract HighLow
     Card public placedCard;
     Card private hiddenCard;
 
-    uint public maxNoOfCards;
-    uint private noOfUnopenedCards;
+    uint8 public maxNoOfCards;
+    uint8 private noOfUnopenedCards;
 
     // Address of the game host. Money goes to them if draw
     address payable public beneficiary;
@@ -46,15 +52,11 @@ contract HighLow
     // Time tracking
     uint public biddingEnd;
     uint public revealEnd;
-    uint public biddingTime;
-    uint public revealTime;
-    
+    uint32 public biddingTime;
+    uint32 public revealTime;
 
-
-
-    modifier onlyBefore(uint _time) { require(now < _time); _; }
-    modifier onlyAfter(uint _time) { require(now > _time); _; }
-
+    modifier onlyBefore(uint _time) {require(now < _time); _;}
+    modifier onlyAfter(uint _time) {require(now > _time); _;}
 
 
     // =========== Functional ===========
@@ -67,42 +69,55 @@ contract HighLow
     //  and a hash of secretkey + prediction. They are allowed one bet.
     // - After time expires, the bets are verified: each user verify()s with their
     //  OG prediction, amount bet, and secretkey. function checks if their prediction
-    // was correct or not, and announces a reward accordingly. (0 for losing, 2x 
+    // was correct or not, and announces a reward accordingly. (0 for losing, 2x
     // for winning)
-    // - With this a new card has been generated. Next round is started by 
+    // - With this a new card has been generated. Next round is started by
     //  reinitialising the times
-    
+
     // constructor initialising
     // - times
     // - all cards in deck
     // - initial newcard
-    constructor(
-        uint _biddingTime,
-        uint _revealTime,
+    constructor
+    (
+        uint32 _biddingTime,
+        uint32 _revealTime,
         address payable _beneficiary
-    ) public 
+    )
+    public
     {
         maxNoOfCards = 52;
-        noOfUnopenedCards = 52;
-
-
-        beneficiary = _beneficiary;
-        biddingEnd = now + _biddingTime;
-        revealEnd = biddingEnd + _revealTime;
-
         biddingTime = _biddingTime;
         revealTime = _revealTime;
+        beneficiary = _beneficiary;
+        // initializeRound will pick a hidden card
+        initializeRound();
+        // Will pick a placed card
+        pickCard(true);
+    }
 
-        for (uint i = 0; i < maxNoOfCards; i++) 
+    function initializeRound()
+        internal
+        onlyAfter(revealEnd)
+    {
+        placedCard = hiddenCard;
+        pickCard(false);
+        biddingEnd = now + biddingTime;
+        revealEnd = biddingEnd + revealTime;
+        if (noOfUnopenedCards <= 10)
+            setCards();
+    }
+
+    function setCards() internal
+    {
+        for (uint8 i = 0; i < maxNoOfCards; i++)
         {
-            uint t1 = i/26;
-            uint t2 = i/13;
-            
-            deck[i] = Card(i, (i+1)%13, t1, t2);
+            // (i % 13) + 1 will give the card numbers in range 1 - 13
+            // (i / 26) != 0 will give bool 0 if i / 26 is 0
+            deck[i] = Card(i, (i % 13) + 1, (i / 26) != 0, ((i / 13) % 2) != 0);
             burn[i] = false;
         }
-        
-        pickCard(true);
+        noOfUnopenedCards = 52;
     }
 
     /// Place a blinded bet with `_blindedPredict` =
@@ -113,7 +128,7 @@ contract HighLow
         onlyBefore(biddingEnd)
     {
         bets[msg.sender] = Bet({
-            blindedPredict: _blindedPredict,
+            blindedPrediction: _blindedPredict,
             amount: msg.value
         });
     }
@@ -130,76 +145,55 @@ contract HighLow
         uint refund;
         Bet storage betToCheck = bets[msg.sender];
         (uint prediction, bytes32 secret) = (_prediction, _secret);
-        if (betToCheck.blindedPredict == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
+        if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
         {
-            if (correctPrediction(prediction, betToCheck.amount)) 
+            if (correctPrediction(prediction, betToCheck.amount))
             {
                 refund = 2*betToCheck.amount;
             }
         }
-        betToCheck.blindedPredict = bytes32(0);
+        betToCheck.blindedPrediction = bytes32(0);
         msg.sender.transfer(refund);
     }
 
     // returns true if the prediction is true, false otherwise. In case of draw,
     // gives money to beneficiary
-    function correctPrediction(uint prediction, uint amt) 
-        internal 
+    function correctPrediction(uint prediction, uint amt)
+        internal
         onlyAfter(biddingEnd)
         onlyBefore(revealEnd)
         returns (bool success)
     {
         // low is 0, high is 1
         uint realval = 2;
-        if (hiddenCard.number < placedCard.number) 
-        {
+        if (hiddenCard.number < placedCard.number)
             realval = 0;
-        }
-        else if (hiddenCard.number > placedCard.number) {
+        else if (hiddenCard.number > placedCard.number)
             realval = 1;
-        }
-        else {
+        else
             beneficiary.transfer(amt);
-        }
 
         return  prediction == realval;
     }
 
     // Takes a new card out. If first, puts it in placedCard directly.
     function pickCard(bool first)
-        public
+        internal
     {
-        uint val = random();
-        while(burn[val]) 
-        {
-            val++;
-        } 
+        uint8 val = random();
+        while(burn[val])
+            val = (val + 1) % maxNoOfCards;
         burn[val] = true;
-        if (first) 
-        {
+        if (first)
             placedCard = deck[val];
-        }
-        else 
-        {
+        else
             hiddenCard = deck[val];
-        }
         noOfUnopenedCards--;
     }
 
-    function random() private view returns (uint) 
+    function random() private view returns (uint8)
     {
-        return uint(uint256(keccak256(abi.encodePacked(block.timestamp, block.difficulty)))%52);
-    }
-    
-    function reset()
-        public
-        onlyAfter(revealEnd)
-    {
-        placedCard = hiddenCard;
-        pickCard(false);
-        biddingEnd = now + biddingTime;
-        revealEnd = biddingEnd + revealTime;
-
+        return uint8(uint256(keccak256(abi.encodePacked(now, block.difficulty))) % maxNoOfCards);
     }
 
     // This is an "internal" function which means that it
