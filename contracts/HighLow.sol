@@ -135,7 +135,7 @@ contract HighLow
 
     /// Reveal your blinded bets.
     function reveal(
-        uint _prediction,
+        bool _prediction,
         bytes32 _secret
     )
         public
@@ -144,36 +144,32 @@ contract HighLow
     {
         uint refund;
         Bet storage betToCheck = bets[msg.sender];
-        (uint prediction, bytes32 secret) = (_prediction, _secret);
+        (bool prediction, bytes32 secret) = (_prediction, _secret);
         if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
-        {
             if (correctPrediction(prediction, betToCheck.amount))
-            {
-                refund = 2*betToCheck.amount;
-            }
-        }
+                refund = 2 * betToCheck.amount;
         betToCheck.blindedPrediction = bytes32(0);
         msg.sender.transfer(refund);
     }
 
     // returns true if the prediction is true, false otherwise. In case of draw,
     // gives money to beneficiary
-    function correctPrediction(uint prediction, uint amt)
+    function correctPrediction(bool prediction, uint amt)
         internal
         onlyAfter(biddingEnd)
         onlyBefore(revealEnd)
         returns (bool success)
     {
         // low is 0, high is 1
-        uint realval = 2;
+        bool realval;
         if (hiddenCard.number < placedCard.number)
-            realval = 0;
+            realval = false;
         else if (hiddenCard.number > placedCard.number)
-            realval = 1;
+            realval = true;
         else
             beneficiary.transfer(amt);
 
-        return  prediction == realval;
+        return prediction == realval;
     }
 
     // Takes a new card out. If first, puts it in placedCard directly.
