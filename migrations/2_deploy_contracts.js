@@ -1,14 +1,22 @@
 var HighLow = artifacts.require("./HighLow.sol");
 
 // Bidding time for each round
-var biddingTime = 30
+var biddingTime = 30;
+var revealTime = 10;
 
-// Reveal time for each round
-var revealTime = 10
+function sleep(ms)
+{
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-// Last account in our local Ganache
-var houseAddress = "0x5b327Fd9d785a7fF939f35430Db0fcEDd1a350b6"
-
-module.exports = function(deployer, network, address) {
-  deployer.deploy(HighLow, biddingTime, revealTime, address[0]);
+module.exports = async function (deployer, network, accounts)
+{
+    await deployer.deploy(HighLow, biddingTime, accounts[9], { from: accounts[9] });
+    highLowInstance = await HighLow.deployed();
+    var delay = (biddingTime + revealTime) * 1000;
+    while (true)
+    {
+        await sleep(delay);
+        await highLowInstance.roundEnd();
+    }
 };

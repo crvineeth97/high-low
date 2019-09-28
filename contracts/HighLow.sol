@@ -33,6 +33,8 @@ contract HighLow
         uint amount;
     }
 
+    event RoundEnded();
+
     // The burn is defined as true/false on indices of deck.
     mapping(uint8 => Card) public deck;
     mapping(uint8 => bool) private burn;
@@ -44,6 +46,7 @@ contract HighLow
     Card private hiddenCard;
 
     uint8 public maxNoOfCards;
+    uint8 public noOfBets;
     uint8 private noOfUnopenedCards;
 
     // Address of the game host. Money goes to them if draw
@@ -51,9 +54,7 @@ contract HighLow
 
     // Time tracking
     uint public biddingEnd;
-    uint public revealEnd;
     uint32 public biddingTime;
-    uint32 public revealTime;
 
     modifier onlyBefore(uint _time) {require(now < _time, "Before Time error"); _;}
     modifier onlyAfter(uint _time) {require(now > _time, "After time error"); _;}
@@ -81,14 +82,12 @@ contract HighLow
     constructor
     (
         uint32 _biddingTime,
-        uint32 _revealTime,
         address payable _beneficiary
     )
     public
     {
         maxNoOfCards = 52;
         biddingTime = _biddingTime;
-        revealTime = _revealTime;
         beneficiary = _beneficiary;
         // initializeRound will pick a hidden card
         initializeRound();
@@ -98,17 +97,41 @@ contract HighLow
 
     function initializeRound()
         internal
-        onlyAfter(revealEnd)
+        onlyAfter(biddingEnd)
     {
-        placedCard = hiddenCard;
-        pickCard(false);
-        biddingEnd = now + biddingTime;
-        revealEnd = biddingEnd + revealTime;
+        require(noOfBets == 0, "Round has not yet ended => New round can't be initialized");
         if (noOfUnopenedCards <= 10)
             setCards();
+        placedCard = hiddenCard;
+        biddingEnd = now + biddingTime;
+        pickCard(false);
     }
 
-    function setCards() internal
+    function random()
+        private
+        view
+        returns (uint8)
+    {
+        return uint8(uint256(keccak256(abi.encodePacked(now, block.difficulty))) % maxNoOfCards);
+    }
+
+    // Takes a new card out. If first, puts it in placedCard directly.
+    function pickCard(bool first)
+        internal
+    {
+        uint8 val = random();
+        while(burn[val])
+            val = (val + 1) % maxNoOfCards;
+        burn[val] = true;
+        if (first)
+            placedCard = deck[val];
+        else
+            hiddenCard = deck[val];
+        noOfUnopenedCards--;
+    }
+
+    function setCards()
+        internal
     {
         for (uint8 i = 0; i < maxNoOfCards; i++)
         {
@@ -127,10 +150,12 @@ contract HighLow
         payable
         onlyBefore(biddingEnd)
     {
+        require(bets[msg.sender].amount == 0, "You have already placed a bet");
         bets[msg.sender] = Bet({
             blindedPrediction: _blindedPredict,
             amount: msg.value
         });
+        noOfBets++;
     }
 
     /// Reveal your blinded bets.
@@ -140,24 +165,26 @@ contract HighLow
     )
         public
         onlyAfter(biddingEnd)
-        onlyBefore(revealEnd)
     {
         uint refund;
         Bet storage betToCheck = bets[msg.sender];
+        require(betToCheck.amount > 0, "No bet from this address");
         (bool prediction, bytes32 secret) = (_prediction, _secret);
         if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
             if (correctPrediction(prediction, betToCheck.amount))
                 refund = 2 * betToCheck.amount;
         betToCheck.blindedPrediction = bytes32(0);
+        betToCheck.amount = 0;
         msg.sender.transfer(refund);
+        noOfBets--;
+        if (noOfBets == 0)
+            roundEnd();
     }
 
     // returns true if the prediction is true, false otherwise. In case of draw,
     // gives money to beneficiary
     function correctPrediction(bool prediction, uint amt)
         internal
-        onlyAfter(biddingEnd)
-        onlyBefore(revealEnd)
         returns (bool success)
     {
         // low is 0, high is 1
@@ -172,56 +199,10 @@ contract HighLow
         return prediction == realval;
     }
 
-    // Takes a new card out. If first, puts it in placedCard directly.
-    function pickCard(bool first)
-        internal
+    function roundEnd()
+        public
     {
-        uint8 val = random();
-        while(burn[val])
-            val = (val + 1) % maxNoOfCards;
-        burn[val] = true;
-        if (first)
-            placedCard = deck[val];
-        else
-            hiddenCard = deck[val];
-        noOfUnopenedCards--;
+        emit RoundEnded();
+        initializeRound();
     }
-
-    function random() private view returns (uint8)
-    {
-        return uint8(uint256(keccak256(abi.encodePacked(now, block.difficulty))) % maxNoOfCards);
-    }
-
-    // This is an "internal" function which means that it
-    // can only be called from the contract itself (or from
-    // derived contracts).
-    // function placeBid(address bidder, uint value) internal
-    //         returns (bool success)
-    // {
-    //     if (value <= highestBid) {
-    //         return false;
-    //     }
-    //     if (highestBidder != address(0)) {
-    //         // Refund the previously highest bidder .
-    //         pendingReturns[highestBidder] += highestBid;
-    //     }
-    //     highestBid = value;
-    //     highestBidder = bidder;
-    //     return true;
-    // }
-
-// }
-
-    /// End the auction and send the highest bid
-    /// to the beneficiary.
-    // function auctionEnd()
-    //     public
-    //     onlyAfter(revealEnd)
-    // {
-    //     require(!ended);
-    //     emit AuctionEnded(highestBidder, highestBid);
-    //     ended = true;
-    //     beneficiary.transfer(highestBid);
-    // }
 }
-
