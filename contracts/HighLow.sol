@@ -18,11 +18,11 @@ contract HighLow
         uint8 number;
         // colour is either a 0 or 1
         // Let us say that 0 = Red and 1 = Black
-        bool colour;
+        uint8 colour;
         // cardType ranges from 0 - 3
         // Let us say that 0 = Diamonds, 1 = Hearts if colour is 0
         // 0 = Clubs and 1 = Spades if colour is 1
-        bool cardType;
+        uint8 cardType;
     }
 
     // A bet comprises the hashed prediction, and the amount
@@ -37,7 +37,7 @@ contract HighLow
     mapping(uint8 => Card) public deck;
     mapping(uint8 => bool) private burn;
 
-    // To map the bid made to the address that made it
+    // To map the bet made to the address that made it
     mapping(address => Bet) public bets;
 
     Card public placedCard;
@@ -91,21 +91,25 @@ contract HighLow
         revealTime = _revealTime;
         beneficiary = _beneficiary;
         // initializeRound will pick a hidden card
-        initializeRound();
+        initializeRound(true);
         // Will pick a placed card
         pickCard(true);
     }
 
-    function initializeRound()
+    function initializeRound(bool first)
         internal
-        onlyAfter(revealEnd)
     {
-        placedCard = hiddenCard;
-        pickCard(false);
-        biddingEnd = now + biddingTime;
-        revealEnd = biddingEnd + revealTime;
-        if (noOfUnopenedCards <= 10)
+        if (!first) {
+            placedCard = hiddenCard;
+            pickCard(false);
+            biddingEnd = now + biddingTime;
+            revealEnd = biddingEnd + revealTime;
+            if (noOfUnopenedCards <= 10)
+                setCards();
+        }
+        else {
             setCards();
+        }
     }
 
     function setCards() internal
@@ -113,11 +117,27 @@ contract HighLow
         for (uint8 i = 0; i < maxNoOfCards; i++)
         {
             // (i % 13) + 1 will give the card numbers in range 1 - 13
-            // (i / 26) != 0 will give bool 0 if i / 26 is 0
-            deck[i] = Card(i, (i % 13) + 1, (i / 26) != 0, ((i / 13) % 2) != 0);
+            // (i / 26) will give 0 or 1
+            // (i / 13) will give 0, 1, 2, 3
+            deck[i] = Card(i, (i % 13) + 1, (i / 26), (i / 13));
             burn[i] = false;
         }
         noOfUnopenedCards = 52;
+    }
+
+    // Takes a new card out. If first, puts it in placedCard directly.
+    function pickCard(bool first)
+        internal
+    {
+        uint8 val = random();
+        while(burn[val])
+            val = (val + 1) % maxNoOfCards;
+        burn[val] = true;
+        if (first)
+            placedCard = deck[val];
+        else
+            hiddenCard = deck[val];
+        noOfUnopenedCards--;
     }
 
     /// Place a blinded bet with `_blindedPredict` =
@@ -170,21 +190,6 @@ contract HighLow
             beneficiary.transfer(amt);
 
         return prediction == realval;
-    }
-
-    // Takes a new card out. If first, puts it in placedCard directly.
-    function pickCard(bool first)
-        internal
-    {
-        uint8 val = random();
-        while(burn[val])
-            val = (val + 1) % maxNoOfCards;
-        burn[val] = true;
-        if (first)
-            placedCard = deck[val];
-        else
-            hiddenCard = deck[val];
-        noOfUnopenedCards--;
     }
 
     function random() private view returns (uint8)
