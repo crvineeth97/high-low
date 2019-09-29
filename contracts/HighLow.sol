@@ -11,17 +11,22 @@ contract HighLow
     // Represent each card as a struct
     struct Card
     {
-        uint8 id; // Used to reference on mapping
+        // id is used to reference on mapping
+
         // number is the number on the card. It ranges from 1 - 13
         // 1 = Ace, 2 - 10 = the 2 - 10 cards
         // 11, 12, 13 = the Joker, Queen and King
-        uint8 number;
+
         // colour is either a 0 or 1
         // Let us say that 0 = Red and 1 = Black
-        bool colour;
+
         // cardType ranges from 0 - 3
         // Let us say that 0 = Diamonds, 1 = Hearts if colour is 0
         // 0 = Clubs and 1 = Spades if colour is 1
+
+        uint8 id;
+        uint8 number;
+        bool colour;
         bool cardType;
     }
 
@@ -51,14 +56,55 @@ contract HighLow
 
     // Address of the game host. Money goes to them if draw
     address payable public beneficiary;
+    // The game can in a single round, be in 4 Stages
+    enum Stages
+    {
+        betStage,
+        revealStage,
+        refund,
+        endRound
+    }
 
-    // Time tracking
-    uint public biddingEnd;
-    uint32 public biddingTime;
+    Stages public stage = Stages.betStage;
+    uint public creationTime = now;
 
-    modifier onlyBefore(uint _time) {require(now < _time, "Before Time error"); _;}
-    modifier onlyAfter(uint _time) {require(now > _time, "After time error"); _;}
+    // ============ For timing the various stages =============
+    // Design pattern taken from https://solidity.readthedocs.io/en/v0.5.0/common-patterns.html#state-machine
 
+    // We need a modifier to disallow certain functions in certain Stages
+    // For instance, we should not be able to call the reveal() function while betting is in progress.
+    // So, we create a modifier for it.
+    modifier atStage(Stages _stage)
+    {
+        require
+        (
+            stage == _stage,
+            "Function cannot be called at this time."
+        );
+        _;
+    }
+
+    // Going from Stage 0 to Stage 1 is easy enough, and from Stage 1 to 2.
+    // This does not store the logic behind limiting switching. It just sets up a sequence.
+    function nextStage()
+        internal
+    {
+        stage = Stages(uint(stage) + 1);
+    }
+
+    // Here we have the times at which the nextStage() function is called.
+    // Essentially, this makes the program tick. When calling a function, we run this modifier. If the conditions
+    //  are satisfied (the time elapsed is sufficient to move to the next stage), then we switch to the next stage
+    //  and then the function works as it is required to.
+    modifier timedTransitions()
+    {
+        if (stage == Stages.betStage && now >= creationTime + 60 seconds)
+            nextStage();
+        if (stage == Stages.revealStage && now >= creationTime + 30 seconds)
+            nextStage();
+        // The other stages transition by transaction
+        _;
+    }
 
     // =========== Functional ===========
     // This is where the logic of the program goes. As a brief sanity check/
@@ -79,36 +125,40 @@ contract HighLow
     // - times
     // - all cards in deck
     // - initial newcard
-    constructor
-    (
-        uint32 _biddingTime,
-        address payable _beneficiary
-    )
-    public
+    constructor (address payable _beneficiary)
+        public
     {
         maxNoOfCards = 52;
-        biddingTime = _biddingTime;
         beneficiary = _beneficiary;
         // initializeRound will pick a hidden card
+        stage = Stages.endRound;
         initializeRound();
         // Will pick a placed card
         pickCard(true);
     }
 
+    // Initializes a new set of cards.
+    // Resets burn deck.
+    // Resets noOfUnopenedCards
     function initializeRound()
         internal
-        onlyAfter(biddingEnd)
+        timedTransitions
+        atStage(Stages.endRound)
     {
         require(noOfBets == 0, "Round has not yet ended => New round can't be initialized");
         if (noOfUnopenedCards <= 10)
             setCards();
         placedCard = hiddenCard;
-        biddingEnd = now + biddingTime;
+        creationTime = now;
+        stage = Stages.betStage;
         pickCard(false);
     }
 
+    // Random number generator. Due to the constraints of blockchain TM, not perfectly random: but it will do
+    // Generates a random number between 0 and 51.
+    // This number is used to pick a card in the pickCard() function
     function random()
-        private
+        internal
         view
         returns (uint8)
     {
@@ -143,30 +193,28 @@ contract HighLow
         noOfUnopenedCards = 52;
     }
 
-    /// Place a blinded bet with `_blindedPredict` =
-    /// keccak256(abi.encodePacked(prediction, secret)).
     function bet(bytes32 _blindedPredict)
         public
         payable
-        onlyBefore(biddingEnd)
+        timedTransitions
+        atStage(Stages.betStage)
     {
         require(bets[msg.sender].amount == 0, "You have already placed a bet");
+        require(msg.value != 0, "You cannot place a bet with 0 ether");
         bets[msg.sender] = Bet({
             blindedPrediction: _blindedPredict,
             amount: msg.value
         });
+        // beneficiary.transfer(msg.value);
         noOfBets++;
     }
 
-    /// Reveal your blinded bets.
-    function reveal(
-        bool _prediction,
-        bytes32 _secret
-    )
+    function reveal(bool _prediction, bytes32 _secret)
         public
-        onlyAfter(biddingEnd)
+        timedTransitions
+        atStage(Stages.revealStage)
     {
-        uint refund;
+        uint refund = 0;
         Bet storage betToCheck = bets[msg.sender];
         require(betToCheck.amount > 0, "No bet from this address");
         (bool prediction, bytes32 secret) = (_prediction, _secret);
@@ -202,7 +250,13 @@ contract HighLow
     function roundEnd()
         public
     {
+        if (noOfBets != 0)
+        {
+            // Need to refund the amount of people who did not reveal their bets
+        }
+        require(msg.sender == beneficiary, "This function can only be called by the house");
         emit RoundEnded();
+        stage = Stages.endRound;
         initializeRound();
     }
 }
