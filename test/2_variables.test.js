@@ -9,7 +9,8 @@ web3.eth.getAccounts().then((acc) => {
 contract("HighLow", (accounts) =>
 {
     before(async () => {
-        this.highLow = await HighLow.deployed()
+        this.highLow = await HighLow.deployed();
+        await this.highLow.initializeRound();
     })
 
     // it("")
@@ -25,8 +26,8 @@ contract("HighLow", (accounts) =>
         for (var i = 0; i < maxCards; i++) {
             let deck = await this.highLow.deck(i);
             assert.equal(deck.number, ((i%13)+1));
-            assert.equal(deck.colour, Math.floor(i/26));
-            assert.equal(deck[i].cardType, Math.floor(i / 13));
+            assert.equal(deck.colour, (Math.floor(i/26) != 0));
+            // assert.equal(deck[i].cardType, ((Math.floor(i / 13)%2)!=0));
         }
     })
 
@@ -36,31 +37,16 @@ contract("HighLow", (accounts) =>
         assert.equal(addr, addrcon);
     })
 
-    it("Bidding time is correct", async() => {
-        const bidTime = await this.highLow.biddingTime();
-        assert.equal(bidTime, 30);
+    it("Start-of-round time is not 0", async() => {
+        const time = await this.highLow.creationTime();
+        assert.notEqual(time, 0);
     })
 
-    it("Reveal time is set correctly", async() => {
-        const revealTime = await this.highLow.revealTime();
-        assert.equal(revealTime, 10);
+    it("Current time is greater than Start-of-round time", async() => {
+        const time = await this.highLow.creationTime();
+        let ctime = Math.round(Date.now() / 1000);
+        assert.isTrue(ctime > time);
     })
-
-    it("Bidding End time is correct", async() => {
-        const bidTime = await this.highLow.biddingTime();
-        const bidEnd = await this.highLow.biddingEnd();
-        const ctime = Math.round(Date.now() / 1000);
-        const endtime = ctime + bidTime;
-
-        assert.notEqual(bidEnd, 0, "Betting end time is not 0");
-        assert.isTrue(ctime < bidEnd);
-        assert.equal(bidEnd, endtime);
-    })
-
-    // it("Current time is within biddingEnd", async() => {
-    //     const biddingEnd = await this.highLow.biddingEnd();
-
-    // })
 
     it("Check that placedCard exists", async() => {
         const placedCard = await this.highLow.placedCard();
@@ -69,42 +55,4 @@ contract("HighLow", (accounts) =>
         assert.notEqual(placedCard, null)
         assert.notEqual(placedCard, undefined)
     })
-
-//     it("A user bets and then reveals his bet after betting time", function ()
-//     {
-//         return HighLow.deployed().then(function (instance)
-//         {
-//             highLowInstance = instance;
-//             return highLowInstance;
-//         }).then(function (highLowInstance)
-//         {
-//             var rnd = getRandomHex();
-//             var prediction = false;
-//             var byt = getKeccak(prediction, rnd);
-//             var account = accounts[5];
-//             var val = 5;
-//             var balance;
-//             web3.eth.getBalance(account).then(function (bal)
-//             {
-//                 balance = web3.utils.fromWei(bal);                
-//             });
-//             highLowInstance.bet(byt, { from: account, value: val }).then(function ()
-//             {
-//                 // Call function to get new balance and check if balance - val = new balance
-//                 assert(balance)
-//                 sleep(3000);
-//             }).then(function ()
-//             {
-//                 highLowInstance.reveal(prediction, rnd).then(function ()
-//                 {
-//                     // Test for balance here again?
-//                 })
-//             });
-//         }).then(function (candidate)
-//         {
-//             assert.equal(candidate[0], 2, "contains the correct id");
-//             assert.equal(candidate[1], "Candidate 2", "contains the correct name");
-//             assert.equal(candidate[2], 0, "contains the correct votes count");
-//         });
-//     });
 }); 

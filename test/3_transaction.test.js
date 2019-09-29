@@ -34,12 +34,13 @@ function getBalance(acc)
 
 contract("HighLow", (accounts) => {
     before(async () => {
-        this.highLow = await HighLow.deployed()
+        this.highLow = await HighLow.deployed();
+        await this.highLow.initializeRound();
     })
 
-    it("Test", async() => {
-        assert.equal(1, 1);
-    })
+    // it("Test", async() => {
+    //     assert.equal(1, 1);
+    // })
 
     it("User can bet successfully", async() => {
         let rnd = getRandomHex();

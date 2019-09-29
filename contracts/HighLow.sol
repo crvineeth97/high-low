@@ -148,7 +148,7 @@ contract HighLow
     
     
     
-    constructor (uint32 _biddingTime, address payable _beneficiary) 
+    constructor (address payable _beneficiary) 
         public
     {
            maxNoOfCards = 52;
