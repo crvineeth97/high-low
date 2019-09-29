@@ -277,8 +277,8 @@ contract HighLow
         Bet storage betToCheck = bets[msg.sender];
         require(betToCheck.amount > 0, "No bet from this address");
         (bool prediction, bytes32 secret) = (_prediction, _secret);
-        emit logPrediction(betToCheck.blindedPrediction);
-        emit logPrediction(keccak256(abi.encodePacked(prediction, secret)));
+        // emit logPrediction(betToCheck.blindedPrediction);
+        // emit logPrediction(keccak256(abi.encodePacked(prediction, secret)));
         if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
         {
             emit log("Reveal works");

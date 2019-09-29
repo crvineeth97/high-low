@@ -19,3 +19,13 @@ truffle console
 > var hl = await contractname.deployed()
 ((( do whatever )))
 ```
+
+## Tests to be written
+
+- Multiple rounds single person
+- Multiple people in a single round
+- Multiple people and multiple rounds
+- Bet from one address and reveal from another address
+- Bet with 0 amount
+- After bet is made, time starts
+- After all reveals, time resets
