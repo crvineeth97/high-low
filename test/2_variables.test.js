@@ -12,8 +12,13 @@ contract("HighLow", (accounts) =>
     before(async () =>
     {
         this.highLow = await HighLow.deployed();
+        await this.highLow.initializeRound();
     })
 
+    after(async () =>
+    {
+        await this.highLow.endGame();
+    })
 
     it("Maximum number of Cards is correct", async () =>
     {

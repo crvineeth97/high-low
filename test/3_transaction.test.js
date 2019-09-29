@@ -29,6 +29,12 @@ contract("HighLow", (accounts) =>
     before(async () =>
     {
         highLowInstance = await HighLow.deployed();
+        highLowInstance.initializeRound();
+    })
+
+    after(async () =>
+    {
+        highLowInstance.endGame();
     })
 
     it("A user bids and then reveals his bid after betting time", async function ()
@@ -38,8 +44,25 @@ contract("HighLow", (accounts) =>
         var blindedPrediction = getKeccak(prediction, rnd);
         var account = accounts[5];
         var val = web3.utils.toWei("2", "ether");
+        var oldbalance = await web3.eth.getBalance(account);
+        var placedCard = await highLowInstance.placedCard();
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
-        await sleep(9000);
+        var newbalance = await web3.eth.getBalance(account);
+        assert.isTrue(newbalance < oldbalance - web3.utils.toBN(val), "Amount not deducted");
+        await sleep(6000);
         await highLowInstance.reveal(prediction, rnd, { from: account});
+        var newPlacedCard = await highLowInstance.placedCard();
+        if (placedCard.number < newPlacedCard.number)
+        {
+            newbalance = await web3.eth.getBalance(account);
+            assert.isTrue(newbalance > oldbalance, "Error did not receive money");
+            // assert.isTrue(newbalance < oldbalance + 2 * web3.utils.toBN(val), "Error did not receive money");
+        }
+        else
+        {
+            newbalance = await web3.eth.getBalance(account);
+            // assert.isTrue(newbalance < oldbalance, "Error did not lose money");
+            assert.isTrue(newbalance < oldbalance - 2 * web3.utils.toBN(val), "Error did not lose money");
+        }
     });
 })

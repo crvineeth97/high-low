@@ -132,17 +132,15 @@ contract HighLow
         beneficiary = _beneficiary;
         // initializeRound will pick a hidden card
         stage = Stages.endRound;
-        initializeRound();
-        // Will pick a placed card
-        pickCard(true);
-        emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
+        setCards();
+        pickCard();
     }
 
     // Initializes a new set of cards.
     // Resets burn deck.
     // Resets noOfUnopenedCards
     function initializeRound()
-        internal
+        public
         timedTransitions
         atStage(Stages.endRound)
     {
@@ -154,7 +152,7 @@ contract HighLow
         emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
         creationTime = 2 * now;
         stage = Stages.betStage;
-        pickCard(false);
+        pickCard();
     }
 
     // Random number generator. Due to the constraints of blockchain TM, not perfectly random: but it will do
@@ -227,17 +225,14 @@ contract HighLow
     }
 
     // Takes a new card out. If first, puts it in placedCard directly.
-    function pickCard(bool first)
+    function pickCard()
         internal
     {
         uint8 val = random();
         while(burn[val])
             val = (val + 1) % maxNoOfCards;
         burn[val] = true;
-        if (first)
-            placedCard = deck[val];
-        else
-            hiddenCard = deck[val];
+        hiddenCard = deck[val];
         noOfUnopenedCards--;
     }
 
@@ -328,5 +323,12 @@ contract HighLow
             beneficiary.transfer(balance - 100 ether);
         stage = Stages.endRound;
         initializeRound();
+    }
+
+    function endGame()
+        public
+    {
+        uint256 balance = address(this).balance;
+        beneficiary.transfer(balance);
     }
 }
