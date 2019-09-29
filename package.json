@@ -13,9 +13,13 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "lite-server": "^2.3.0"
+    "lite-server": "^2.3.0",
+    "prettier": "^1.18.2",
+    "prettier-plugin-solidity": "^1.0.0-alpha.34"
   },
   "dependencies": {
-    "ethlint": "^1.2.5"
+    "chai": "^4.2.0",
+    "ethlint": "^1.2.5",
+    "mocha": "^6.2.0"
   }
 }

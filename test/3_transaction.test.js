@@ -1,7 +1,8 @@
 var HighLow = artifacts.require("./HighLow.sol");
 var accounts;
 
-web3.eth.getAccounts().then((acc) => {
+web3.eth.getAccounts().then((acc) =>
+{
     accounts = acc;
 });
 
@@ -22,80 +23,29 @@ const sleep = (milliseconds) =>
     return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
-function getBalance(acc)
+contract("HighLow", (accounts) =>
 {
-    let balance = 0;
-    web3.eth.getBalance(acc).then(function (bal)
+    var highLowInstance;
+    before(async () =>
     {
-        balance = web3.utils.fromWei(bal);                
+        highLowInstance = await HighLow.deployed();
+        await highLowInstance.initializeRound();
+    })
+
+    it("A user bids and then reveals his bid after betting time", async function ()
+    {
+        var rnd = getRandomHex();
+        var prediction = false;
+        var blindedPrediction = getKeccak(prediction, rnd);
+        var account = accounts[5];
+        var val = web3.utils.toWei(2, "ether");
+        var oldBalance = await web3.eth.getBalance(account);
+        await highLowInstance.bet(blindedPrediction, { from: account, value: val.toString() });
+        // Call function to get new balance and check if balance - val = new balance
+        var newBalance = await web3.eth.getBalance(account);
+        assert.equal(oldBalance - val, newBalance);
+        await sleep(3000);
+        await highLowInstance.reveal(prediction, rnd);
+        // Test for balance here again?
     });
-    return balance;
-}
-
-contract("HighLow", (accounts) => {
-    before(async () => {
-        this.highLow = await HighLow.deployed();
-        await this.highLow.initializeRound();
-    })
-
-    // it("Test", async() => {
-    //     assert.equal(1, 1);
-    // })
-
-    it("User can bet successfully", async() => {
-        let rnd = getRandomHex();
-        let prediction = false;
-        let byt = getKeccak(prediction, rnd);
-        let account = accounts[1];
-        let val = 1;
-        let balance = getBalance(account);
-        
-        await this.highLow.bet(byt, {from: account, value: val})
-            
-        let balance2 = getBalance(account);
-        assert.isTrue(balance2 >= (balance), "The amount bet has been taken from wallet.");
-        // assert.isTrue(this.highLow.bets[account] > 0);
-        // assert.equal(1, 0);
-        
-    })
 })
-
-    
-// }
-    // it("A user bets and then reveals his bet after betting time", function ()
-    // {
-    //     return HighLow.deployed().then(function (instance)
-    //     {
-    //         highLowInstance = instance;
-    //         return highLowInstance;
-    //     }).then(function (highLowInstance)
-    //     {
-    //         var rnd = getRandomHex();
-    //         var prediction = false;
-    //         var byt = getKeccak(prediction, rnd);
-    //         var account = accounts[5];
-    //         var val = 5;
-    //         var balance;
-    //         web3.eth.getBalance(account).then(function (bal)
-    //         {
-    //             balance = web3.utils.fromWei(bal);                
-    //         });
-    //         highLowInstance.bet(byt, { from: account, value: val }).then(function ()
-    //         {
-    //             // Call function to get new balance and check if balance - val = new balance
-    //             assert(balance)
-    //             sleep(3000);
-    //         }).then(function ()
-    //         {
-    //             highLowInstance.reveal(prediction, rnd).then(function ()
-    //             {
-    //                 // Test for balance here again?
-    //             })
-    //         });
-    //     }).then(function (candidate)
-    //     {
-    //         assert.equal(candidate[0], 2, "contains the correct id");
-    //         assert.equal(candidate[1], "Candidate 2", "contains the correct name");
-    //         assert.equal(candidate[2], 0, "contains the correct votes count");
-    //     });
-    // });
