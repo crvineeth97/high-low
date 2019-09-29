@@ -39,6 +39,8 @@ contract HighLow
     }
 
     event cardPlaced(string description);
+    event log(string description);
+    event logPrediction(bytes32 pred);
     event RoundEnded();
 
     // The burn is defined as true/false on indices of deck.
@@ -61,13 +63,11 @@ contract HighLow
     enum Stages
     {
         betStage,
-        revealStage,
-        refund,
         endRound
     }
 
     Stages public stage = Stages.betStage;
-    uint public creationTime = now;
+    uint public creationTime;
 
     // ============ For timing the various stages =============
     // Design pattern taken from https://solidity.readthedocs.io/en/v0.5.0/common-patterns.html#state-machine
@@ -99,9 +99,7 @@ contract HighLow
     //  and then the function works as it is required to.
     modifier timedTransitions()
     {
-        if (stage == Stages.betStage && now >= creationTime + 6 seconds)
-            nextStage();
-        if (stage == Stages.revealStage && now >= creationTime + 15 seconds)
+        if (stage == Stages.betStage && now >= creationTime + 5 seconds)
             nextStage();
         // The other stages transition by transaction
         _;
@@ -128,6 +126,7 @@ contract HighLow
     // - initial newcard
     constructor (address payable _beneficiary)
         public
+        payable
     {
         maxNoOfCards = 52;
         beneficiary = _beneficiary;
@@ -153,7 +152,7 @@ contract HighLow
         placedCard = hiddenCard;
 
         emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
-        creationTime = now;
+        creationTime = 2 * now;
         stage = Stages.betStage;
         pickCard(false);
     }
@@ -261,8 +260,11 @@ contract HighLow
         timedTransitions
         atStage(Stages.betStage)
     {
+        if (noOfBets == 0)
+            creationTime = now;
         require(bets[msg.sender].amount == 0, "You have already placed a bet");
         require(msg.value != 0, "You cannot place a bet with 0 ether");
+        emit log("A bet has been placed");
         bets[msg.sender] = Bet({
             blindedPrediction: _blindedPredict,
             amount: msg.value
@@ -274,15 +276,22 @@ contract HighLow
     function reveal(bool _prediction, bytes32 _secret)
         public
         timedTransitions
-        atStage(Stages.revealStage)
+        atStage(Stages.endRound)
     {
         uint refund = 0;
         Bet storage betToCheck = bets[msg.sender];
         require(betToCheck.amount > 0, "No bet from this address");
         (bool prediction, bytes32 secret) = (_prediction, _secret);
+        emit logPrediction(betToCheck.blindedPrediction);
+        emit logPrediction(keccak256(abi.encodePacked(prediction, secret)));
         if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
+        {
+            emit log("Reveal works");
             if (correctPrediction(prediction, betToCheck.amount))
                 refund = 2 * betToCheck.amount;
+        }
+        else
+            emit log("Reveal is not working");
         betToCheck.blindedPrediction = bytes32(0);
         betToCheck.amount = 0;
         msg.sender.transfer(refund);
@@ -314,6 +323,9 @@ contract HighLow
     {
         // This function is called after all bets are revealed
         emit RoundEnded();
+        uint256 balance = address(this).balance;
+        if (balance > 100 ether)
+            beneficiary.transfer(balance - 100 ether);
         stage = Stages.endRound;
         initializeRound();
     }

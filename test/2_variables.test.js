@@ -47,12 +47,12 @@ contract("HighLow", (accounts) =>
         assert.notEqual(time, 0);
     })
 
-    it("Current time is greater than Start-of-round time", async () =>
-    {
-        const time = await this.highLow.creationTime();
-        let ctime = Math.round(Date.now() / 1000);
-        assert.isTrue(ctime > time);
-    })
+    // it("Current time is greater than Start-of-round time", async () =>
+    // {
+    //     const time = await this.highLow.creationTime();
+    //     let ctime = Math.round(Date.now() / 1000);
+    //     assert.isTrue(ctime > time);
+    // })
 
     it("Check that placedCard exists", async () =>
     {

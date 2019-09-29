@@ -14,7 +14,7 @@ function getRandomHex()
 function getKeccak(prediction, rnd)
 {
     // var rnd = getRandomHex();
-    var hx = web3.utils.keccak256(web3.utils.toHex(prediction) + rnd, { encoding: "hex" });
+    var hx = web3.utils.soliditySha3(prediction, rnd);
     return web3.utils.hexToBytes(hx);
 }
 
