@@ -46,6 +46,22 @@ contract("HighLow", (accounts) =>
         assert.equal(revealTime, 10);
     })
 
+    it("Bidding End time is correct", async() => {
+        const bidTime = await this.highLow.biddingTime();
+        const bidEnd = await this.highLow.biddingEnd();
+        const ctime = Math.round(Date.now() / 1000);
+        const endtime = ctime + bidTime;
+
+        assert.notEqual(bidEnd, 0, "Betting end time is not 0");
+        assert.isTrue(ctime < bidEnd);
+        assert.equal(bidEnd, endtime);
+    })
+
+    // it("Current time is within biddingEnd", async() => {
+    //     const biddingEnd = await this.highLow.biddingEnd();
+
+    // })
+
     it("Check that placedCard exists", async() => {
         const placedCard = await this.highLow.placedCard();
         assert.notEqual(placedCard, 0x0)

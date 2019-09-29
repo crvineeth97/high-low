@@ -11,3 +11,11 @@ truffle compile
 truffle migrate --reset
 truffle test
 ```
+Note that all the commands assume here you have ganache running.
+
+### If you wish to use truffle console
+```
+truffle console
+> var hl = await contractname.deployed()
+((( do whatever )))
+```

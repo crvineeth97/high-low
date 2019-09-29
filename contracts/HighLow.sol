@@ -151,6 +151,7 @@ contract HighLow
             blindedPrediction: _blindedPredict,
             amount: msg.value
         });
+        beneficiary.transfer(msg.value);
     }
 
     /// Reveal your blinded bets.
