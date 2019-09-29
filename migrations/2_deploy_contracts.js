@@ -10,7 +10,7 @@ function sleep(ms) {
 }
 
 module.exports = async function(deployer, network, accounts) {
-  await deployer.deploy(HighLow, accounts[9], { from: accounts[9], value: val });
+  await deployer.deploy(HighLow, accounts[8], { from: accounts[8], value: val });
     // var highLowInstance = await HighLow.deployed();
     // highLowInstance.initializeRound();
 };

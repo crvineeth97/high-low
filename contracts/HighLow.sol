@@ -152,6 +152,7 @@ contract HighLow
         emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
         creationTime = 2 * now;
         stage = Stages.betStage;
+        emit log("Round has started, stage has been set");
         pickCard();
     }
 

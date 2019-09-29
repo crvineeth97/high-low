@@ -41,7 +41,7 @@ contract("HighLow", (accounts) =>
 
     it("Beneficiary address is the same as contract creator", async () =>
     {
-        const addr = accounts[9];
+        const addr = accounts[8];
         const addrcon = await this.highLow.beneficiary();
         assert.equal(addr, addrcon);
     })
@@ -67,4 +67,19 @@ contract("HighLow", (accounts) =>
         assert.notEqual(placedCard, null)
         assert.notEqual(placedCard, undefined)
     })
+
+    // it("The stage is set to Stages.betStage at initialization", async () => {
+    //     const stage = await this.highLow.stage();
+    //     assert.equal(stage, this.highLow.Stages.betStage);
+        // let rnd = getRandomHex();
+        // let prediction = true;
+        // let blindedPrediction = getKeccak(prediction, rnd);
+        // let account = accounts[5];
+
+        // let val = web3.utils.toWei("1", "ether");
+        // let oldbalance = await web3.eth.getBalance(account);
+        // let placedCard = await this.highLow.placedCard();
+
+        // await this.highLow.bet(blindedPrediction, {from: account, value: val});
+    // })
 }); 
