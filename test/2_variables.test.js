@@ -12,7 +12,6 @@ contract("HighLow", (accounts) =>
     before(async () =>
     {
         this.highLow = await HighLow.deployed();
-        await this.highLow.initializeRound();
     })
 
 

@@ -38,6 +38,7 @@ contract HighLow
         uint amount;
     }
 
+    event cardPlaced(string description);
     event RoundEnded();
 
     // The burn is defined as true/false on indices of deck.
@@ -98,9 +99,9 @@ contract HighLow
     //  and then the function works as it is required to.
     modifier timedTransitions()
     {
-        if (stage == Stages.betStage && now >= creationTime + 60 seconds)
+        if (stage == Stages.betStage && now >= creationTime + 6 seconds)
             nextStage();
-        if (stage == Stages.revealStage && now >= creationTime + 30 seconds)
+        if (stage == Stages.revealStage && now >= creationTime + 15 seconds)
             nextStage();
         // The other stages transition by transaction
         _;
@@ -135,6 +136,7 @@ contract HighLow
         initializeRound();
         // Will pick a placed card
         pickCard(true);
+        emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
     }
 
     // Initializes a new set of cards.
@@ -149,6 +151,8 @@ contract HighLow
         if (noOfUnopenedCards <= 10)
             setCards();
         placedCard = hiddenCard;
+
+        emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
         creationTime = now;
         stage = Stages.betStage;
         pickCard(false);
@@ -163,6 +167,64 @@ contract HighLow
         returns (uint8)
     {
         return uint8(uint256(keccak256(abi.encodePacked(now, block.difficulty))) % maxNoOfCards);
+    }
+
+    function cardNoToStr(uint8 i)
+        internal
+        pure
+        returns (string memory _uintAsString)
+    {
+        if (i == 1)
+            return "Ace";
+        else if (i == 2)
+            return "Two";
+        else if (i == 3)
+            return "Three";
+        else if (i == 4)
+            return "Four";
+        else if (i == 5)
+            return "Five";
+        else if (i == 6)
+            return "Six";
+        else if (i == 7)
+            return "Seven";
+        else if (i == 8)
+            return "Eight";
+        else if (i == 9)
+            return "Nine";
+        else if (i == 10)
+            return "Ten";
+        else if (i == 11)
+            return "Jack";
+        else if (i == 12)
+            return "Queen";
+        else if (i == 13)
+            return "King";
+        else
+            return "Ignore emit";
+    }
+
+    function getPlacedCard()
+        public
+        view
+        returns (string memory)
+    {
+        string memory cardType;
+        if (placedCard.colour == false)
+        {
+            if (placedCard.cardType == false)
+                cardType = "diamonds";
+            else
+                cardType = "hearts";
+        }
+        else
+        {
+            if (placedCard.cardType == false)
+                cardType = "clubs";
+            else
+                cardType = "spades";
+        }
+        return string(abi.encodePacked(cardNoToStr(placedCard.number), " of ", cardType));
     }
 
     // Takes a new card out. If first, puts it in placedCard directly.
@@ -248,13 +310,9 @@ contract HighLow
     }
 
     function roundEnd()
-        public
+        internal
     {
-        if (noOfBets != 0)
-        {
-            // Need to refund the amount of people who did not reveal their bets
-        }
-        require(msg.sender == beneficiary, "This function can only be called by the house");
+        // This function is called after all bets are revealed
         emit RoundEnded();
         stage = Stages.endRound;
         initializeRound();

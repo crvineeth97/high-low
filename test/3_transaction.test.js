@@ -29,23 +29,17 @@ contract("HighLow", (accounts) =>
     before(async () =>
     {
         highLowInstance = await HighLow.deployed();
-        await highLowInstance.initializeRound();
     })
 
     it("A user bids and then reveals his bid after betting time", async function ()
     {
         var rnd = getRandomHex();
-        var prediction = false;
+        var prediction = true;
         var blindedPrediction = getKeccak(prediction, rnd);
         var account = accounts[5];
-        var val = web3.utils.toWei(2, "ether");
-        var oldBalance = await web3.eth.getBalance(account);
-        await highLowInstance.bet(blindedPrediction, { from: account, value: val.toString() });
-        // Call function to get new balance and check if balance - val = new balance
-        var newBalance = await web3.eth.getBalance(account);
-        assert.equal(oldBalance - val, newBalance);
-        await sleep(3000);
-        await highLowInstance.reveal(prediction, rnd);
-        // Test for balance here again?
+        var val = web3.utils.toWei("2", "ether");
+        await highLowInstance.bet(blindedPrediction, { from: account, value: val });
+        await sleep(9000);
+        await highLowInstance.reveal(prediction, rnd, { from: account});
     });
 })
