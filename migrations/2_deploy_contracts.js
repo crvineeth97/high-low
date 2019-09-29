@@ -3,7 +3,7 @@ var HighLow = artifacts.require("./HighLow.sol");
 // Bidding time for each round
 var biddingTime = 30;
 var revealTime = 10;
-var val = web3.utils.toWei("10", "ether");
+var val = web3.utils.toWei("5", "ether");
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));

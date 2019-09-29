@@ -281,12 +281,11 @@ contract HighLow
         // emit logPrediction(keccak256(abi.encodePacked(prediction, secret)));
         if (betToCheck.blindedPrediction == keccak256(abi.encodePacked(prediction, secret))) // Need to check this works
         {
-            emit log("Reveal works");
             if (correctPrediction(prediction, betToCheck.amount))
                 refund = 2 * betToCheck.amount;
         }
         else
-            emit log("Reveal is not working");
+            revert("The provided reveal variables do not match the commited message");
         betToCheck.blindedPrediction = bytes32(0);
         betToCheck.amount = 0;
         msg.sender.transfer(refund);
@@ -319,8 +318,8 @@ contract HighLow
         // This function is called after all bets are revealed
         emit RoundEnded();
         uint256 balance = address(this).balance;
-        if (balance > 100 ether)
-            beneficiary.transfer(balance - 100 ether);
+        if (balance > 5 ether)
+            beneficiary.transfer(balance - 5 ether);
         stage = Stages.endRound;
         initializeRound();
     }
