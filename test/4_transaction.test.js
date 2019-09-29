@@ -59,14 +59,14 @@ contract("HighLow", (accounts) =>
         newbalance = await web3.eth.getBalance(account);
         console.log(placedCard.number, newPlacedCard.number);
         console.log(oldbalance, newbalance);
-        if (placedCard.number < newPlacedCard.number)
+        if ((newPlacedCard.number - placedCard.number) > 0 )
         {
-            assert.isTrue(newbalance > oldbalance, "Error did not receive money");
+            assert.isTrue((newbalance - oldbalance) > 0, "Error did not receive money");
             assert.isTrue((newbalance-oldbalance) <= web3.utils.toBN(val), "Error did not receive exact money");
         }
         else// if (placedCard.number > newPlacedCard.number)
         {   
-            assert.isTrue(newbalance <= oldbalance, "Error did not lose money");
+            assert.isTrue((oldbalance - newbalance) >= 0, "Error did not lose money");
             assert.isTrue((oldbalance - newbalance) >= web3.utils.toBN(val) , "Error did not lose exact money");
         }
         // else 
