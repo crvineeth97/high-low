@@ -2,6 +2,8 @@
 
 Implementation of a House vs Players High Low game. Very similar to [this implementation](https://www.mathsisfun.com/games/higher-or-lower.html)
 
+Team 13: 20171076, 201564080
+
 ## Getting started
 
 ```
