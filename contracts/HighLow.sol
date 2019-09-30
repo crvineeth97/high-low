@@ -99,7 +99,7 @@ contract HighLow
     //  and then the function works as it is required to.
     modifier timedTransitions()
     {
-        if (stage == Stages.betStage && now >= creationTime + 5 seconds)
+        if (stage == Stages.betStage && now >= creationTime + 15 seconds)
             nextStage();
         // The other stages transition by transaction
         _;
@@ -152,6 +152,7 @@ contract HighLow
         emit cardPlaced(string(abi.encodePacked("The card currently placed is the ", getPlacedCard())));
         creationTime = 2 * now;
         stage = Stages.betStage;
+        emit log("Round has started, stage has been set");
         pickCard();
     }
 
@@ -318,8 +319,8 @@ contract HighLow
         // This function is called after all bets are revealed
         emit RoundEnded();
         uint256 balance = address(this).balance;
-        if (balance > 5 ether)
-            beneficiary.transfer(balance - 5 ether);
+        if (balance > 20 ether)
+            beneficiary.transfer(balance - 20 ether);
         stage = Stages.endRound;
         initializeRound();
     }

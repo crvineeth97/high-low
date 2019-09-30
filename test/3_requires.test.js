@@ -26,6 +26,7 @@ const sleep = (milliseconds) =>
     return new Promise(resolve => setTimeout(resolve, milliseconds))
 }
 
+
 contract("HighLow", (accounts) =>
 {
     var highLowInstance;
@@ -40,7 +41,7 @@ contract("HighLow", (accounts) =>
         highLowInstance.endGame();
     })
 
-    it("User bets with an amount of 0", async function ()
+    it("User bet with an amount of 0 is rejected", async function ()
     {
         var rnd = getRandomHex();
         var prediction = false;
@@ -65,21 +66,28 @@ contract("HighLow", (accounts) =>
         highLowInstance.endGame();
     })
 
-    it("Bidding time starts only after the first bid to avoid empty rounds and time resets after all reveals", async function ()
+    it("Betting time starts only after the first bid to avoid empty rounds and time resets after all reveals", async function ()
     {
+        // For logic reasons, the creationTime in the contract is set to
+        // 2*now when the first bet has not been placed.
         var rnd = getRandomHex();
         var prediction = true;
         var blindedPrediction = getKeccak(prediction, rnd);
         var account = accounts[5];
         var val = web3.utils.toWei("2", "ether");
+        
         var initCreationTime = await highLowInstance.creationTime();
+        
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
+        
         var newCreationTime = await highLowInstance.creationTime();
-        assert.isTrue(newCreationTime < initCreationTime, "Round initial creation time is not greater than creation time after betting");
-        await sleep(6000);
+        
+        assert.isTrue((initCreationTime - newCreationTime) > 0, "Round initial creation time is not greater than creation time after betting");
+        await sleep(17000);
         await highLowInstance.reveal(prediction, rnd, { from: account});
+        
         initCreationTime = await highLowInstance.creationTime();
-        assert.isTrue(newCreationTime < initCreationTime, "New round initial creation time is not greater than time after betting");
+        assert.isTrue((initCreationTime - newCreationTime) > 0, "New round initial creation time is not greater than time after betting");
     });
 })
 
@@ -97,15 +105,17 @@ contract("HighLow", (accounts) =>
         highLowInstance.endGame();
     })
 
-    it("User bets from one address and tries to reveal using a different address", async function ()
+    it("User betting from one address and trying to reveal using a different address gets rejected", async function ()
     {
         var rnd = getRandomHex();
         var prediction = false;
         var blindedPrediction = getKeccak(prediction, rnd);
         var account = accounts[3];
         var val = web3.utils.toWei("1", "ether");
+        
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
-        await sleep(6000);
+        await sleep(17000);
+        
         await highLowInstance.reveal(prediction, rnd, { from: accounts[4] }).should.be.rejected;
     });
 })
@@ -124,7 +134,7 @@ contract("HighLow", (accounts) =>
         highLowInstance.endGame();
     })
 
-    it("User bets and uses a different random number for reveal phase", async function ()
+    it("User bets and uses a different random number for reveal phase gets rejected", async function ()
     {
         var rnd1 = getRandomHex();
         var rnd2 = getRandomHex();
@@ -133,7 +143,7 @@ contract("HighLow", (accounts) =>
         var account = accounts[3];
         var val = web3.utils.toWei("1", "ether");
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
-        await sleep(6000);
+        await sleep(17000);
         await highLowInstance.reveal(prediction, rnd2, { from: account }).should.be.rejected;
     });
 })
