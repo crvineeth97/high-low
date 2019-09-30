@@ -1,0 +1,198 @@
+Using network 'development'.
+
+
+Compiling your contracts...
+===========================
+> Compiling ./contracts/HighLow.sol
+
+
+
+  Contract: HighLow
+    ✓ Deployed successfully, Address not null
+    > No events were emitted
+
+  Contract: HighLow
+    ✓ Maximum number of Cards is correct
+    > No events were emitted
+    ✓ Initialisation of Cards is correct (1283ms)
+    > No events were emitted
+    ✓ Beneficiary address is the same as contract creator
+    > No events were emitted
+    ✓ Start-of-round time is not 0
+    > No events were emitted
+    ✓ Check that placedCard exists
+    > No events were emitted
+
+  Contract: HighLow
+    ✓ User bet with an amount of 0 is rejected (129ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    1) Betting time starts only after the first bid to avoid empty rounds and time resets after all reveals
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    ✓ User betting from one address and trying to reveal using a different address gets rejected (17192ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    ✓ User bets and uses a different random number for reveal phase gets rejected (17190ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    ✓ A user bids and then reveals his bid after betting time (17527ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Four of spades (string))
+    log(description: Round has started, stage has been set (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    ✓ A user bids in multiple rounds (86474ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Two of hearts (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Queen of clubs (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Three of hearts (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Three of spades (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Ace of hearts (string))
+    log(description: Round has started, stage has been set (string))
+
+    ---------------------------
+
+  Contract: HighLow
+BN { negative: 0, words: [ 10, <1 empty item> ], length: 1, red: null } BN { negative: 0, words: [ 11, <1 empty item> ], length: 1, red: null }
+99983324080000000000 100985370440000000000
+99984600720000000000 100986488220000000000
+99970227960000000000 100973875840000000000
+    ✓ Three users bid and then reveal their bids after betting time (17844ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Ten of hearts (string))
+    log(description: Round has started, stage has been set (string))
+
+    ---------------------------
+
+  Contract: HighLow
+    ✓ Three users bid and then reveal their bids after betting time in multiple rounds (88217ms)
+
+    Events emitted during test:
+    ---------------------------
+
+    cardPlaced(description: The card currently placed is the Jack of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Four of clubs (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Four of spades (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Eight of spades (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Four of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    log(description: A bet has been placed (string))
+    RoundEnded()
+    cardPlaced(description: The card currently placed is the Queen of diamonds (string))
+    log(description: Round has started, stage has been set (string))
+
+    ---------------------------
+
+
+  13 passing (4m)
+  1 failing
+
+  1) Contract: HighLow
+       Betting time starts only after the first bid to avoid empty rounds and time resets after all reveals:
+     Error: Returned error: VM Exception while processing transaction: revert
+      at Object.ErrorResponse (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/web3-eth/~/web3-core-helpers/src/errors.js:29:1)
+      at /home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/web3-eth/~/web3-core-requestmanager/src/index.js:140:1
+      at /home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/packages/truffle-provider/wrapper.js:112:1
+      at XMLHttpRequest.request.onreadystatechange (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/web3/~/web3-providers-http/src/index.js:96:1)
+      at XMLHttpRequestEventTarget.dispatchEvent (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/xhr2-cookies/dist/xml-http-request-event-target.js:34:1)
+      at XMLHttpRequest._setReadyState (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/xhr2-cookies/dist/xml-http-request.js:208:1)
+      at XMLHttpRequest._onHttpResponseEnd (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/xhr2-cookies/dist/xml-http-request.js:318:1)
+      at IncomingMessage.<anonymous> (/home/zubair/.nvm/versions/node/v12.11.0/lib/node_modules/truffle/build/webpack:/~/xhr2-cookies/dist/xml-http-request.js:289:47)
+      at endReadableNT (_stream_readable.js:1183:12)
+      at processTicksAndRejections (internal/process/task_queues.js:80:21)
+
