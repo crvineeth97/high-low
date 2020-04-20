@@ -52,7 +52,7 @@ contract("HighLow", (accounts) =>
         
         var newbalance = await web3.eth.getBalance(account);
         assert.isTrue(newbalance <= oldbalance - web3.utils.toBN(val), "Amount not deducted");
-        await sleep(17000);
+        await sleep(20000);
         
         await highLowInstance.reveal(prediction, rnd, { from: account});
         var newPlacedCard = await highLowInstance.placedCard();
@@ -102,7 +102,7 @@ contract("HighLow", (accounts) => {
             newbalance = await web3.eth.getBalance(account);
             assert.isTrue(newbalance <= oldbalance - web3.utils.toBN(val), "Amount not deducted");
 
-            await sleep(17000);
+            await sleep(20000);
             await highLowInstance.reveal(prediction, rnd, {from: account});
 
             newbalance = await web3.eth.getBalance(account);

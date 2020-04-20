@@ -83,7 +83,7 @@ contract("HighLow", (accounts) =>
         var newCreationTime = await highLowInstance.creationTime();
         
         assert.isTrue((initCreationTime - newCreationTime) > 0, "Round initial creation time is not greater than creation time after betting");
-        await sleep(17000);
+        await sleep(20000);
         await highLowInstance.reveal(prediction, rnd, { from: account});
         
         initCreationTime = await highLowInstance.creationTime();
@@ -114,7 +114,7 @@ contract("HighLow", (accounts) =>
         var val = web3.utils.toWei("1", "ether");
         
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
-        await sleep(17000);
+        await sleep(20000);
         
         await highLowInstance.reveal(prediction, rnd, { from: accounts[4] }).should.be.rejected;
     });
@@ -143,7 +143,7 @@ contract("HighLow", (accounts) =>
         var account = accounts[3];
         var val = web3.utils.toWei("1", "ether");
         await highLowInstance.bet(blindedPrediction, { from: account, value: val });
-        await sleep(17000);
+        await sleep(20000);
         await highLowInstance.reveal(prediction, rnd2, { from: account }).should.be.rejected;
     });
 })

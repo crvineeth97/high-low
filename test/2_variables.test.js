@@ -41,7 +41,7 @@ contract("HighLow", (accounts) =>
 
     it("Beneficiary address is the same as contract creator", async () =>
     {
-        const addr = accounts[8];
+        const addr = accounts[7];
         const addrcon = await this.highLow.beneficiary();
         assert.equal(addr, addrcon);
     })

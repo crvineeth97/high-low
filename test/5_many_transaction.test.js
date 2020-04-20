@@ -78,7 +78,7 @@ contract("HighLow", (accounts) =>
         assert.isTrue(newbalance2 <= oldbalance2 - web3.utils.toBN(val), "#2 Amount not deducted");
         assert.isTrue(newbalance3 <= oldbalance3 - web3.utils.toBN(val), "#3 Amount not deducted");        
 
-        await sleep(17000);
+        await sleep(20000);
         
         await highLowInstance.reveal(prediction1, rnd1, { from: account1});
         await highLowInstance.reveal(prediction2, rnd2, { from: account2});
@@ -191,7 +191,7 @@ contract("HighLow", (accounts) => {
             assert.isTrue(newbalance2 <= oldbalance2 - web3.utils.toBN(val), "#2 Amount not deducted");
             assert.isTrue(newbalance3 <= oldbalance3 - web3.utils.toBN(val), "#3 Amount not deducted");        
 
-            await sleep(17000);
+            await sleep(20000);
             
             await highLowInstance.reveal(prediction1, rnd1, { from: account1});
             await highLowInstance.reveal(prediction2, rnd2, { from: account2});
